@@ -16,18 +16,21 @@ import {
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 const CHECK_EMOJI = '<a:checkmark:1519197302747824309>';
+const LOADING_EMOJI = '<a:sapphireload:1519198982293946424>';
 
 export default {
   data: new SlashCommandBuilder()
     .setName('warn')
     .setDescription('Warn a user')
     .addUserOption(o =>
-      o.setName('target')
+      o
+        .setName('target')
         .setRequired(true)
         .setDescription('User to warn')
     )
     .addStringOption(o =>
-      o.setName('reason')
+      o
+        .setName('reason')
         .setRequired(true)
         .setDescription('Reason for the warning')
     )
@@ -39,11 +42,11 @@ export default {
     const deferSuccess = await InteractionHelper.safeDefer(interaction);
     if (!deferSuccess) return;
 
+    let replyMessage;
+
     try {
-      await InteractionHelper.safeEditReply(interaction, {
-        content: '⏳ Warning user...',
-        embeds: [],
-      });
+      replyMessage = await interaction.fetchReply();
+      await replyMessage.react(LOADING_EMOJI);
 
       const target = interaction.options.getUser('target');
       const member = interaction.options.getMember('target');
@@ -102,6 +105,15 @@ export default {
         },
       });
 
+      try {
+        const loadingReaction = replyMessage.reactions.cache.find(
+          r => r.emoji.toString() === LOADING_EMOJI
+        );
+        if (loadingReaction) {
+          await loadingReaction.users.remove(client.user.id);
+        }
+      } catch {}
+
       const successEmbed = new EmbedBuilder()
         .setColor(0x57F287)
         .setDescription(
@@ -117,6 +129,18 @@ export default {
       });
     } catch (error) {
       logger.error('Warn command error:', error);
+
+      try {
+        if (replyMessage) {
+          const loadingReaction = replyMessage.reactions.cache.find(
+            r => r.emoji.toString() === LOADING_EMOJI
+          );
+          if (loadingReaction) {
+            await loadingReaction.users.remove(client.user.id);
+          }
+        }
+      } catch {}
+
       await handleInteractionError(interaction, error, {
         subtype: 'warn_failed',
       });
