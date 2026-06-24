@@ -11,7 +11,7 @@ export const botConfig = {
       {
         name: "custom",
         type: 4, // Custom Status
-        state: "👀 watching discord.gg/debatecord",
+        state: "👀 watching discord.gg/77r23uTXf",
       },
     ],
   },
