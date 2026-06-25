@@ -22,25 +22,25 @@ export default {
   data: new SlashCommandBuilder()
     .setName('warn')
     .setDescription('Warn a user')
-    .addUserOption(o =>
-      o
+    .addUserOption(option =>
+      option
         .setName('target')
         .setRequired(true)
-        .setDescription('User to warn')
+        .setDescription('User to warn'),
     )
-    .addStringOption(o =>
-      o
+    .addStringOption(option =>
+      option
         .setName('reason')
         .setRequired(true)
-        .setDescription('Reason for the warning')
+        .setDescription('Reason for the warning'),
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
   category: 'moderation',
 
   async execute(interaction, config, client) {
-    const deferSuccess = await InteractionHelper.safeDefer(interaction);
-    if (!deferSuccess) return;
+    const deferred = await InteractionHelper.safeDefer(interaction);
+    if (!deferred) return;
 
     let replyMessage;
 
@@ -48,30 +48,30 @@ export default {
       replyMessage = await interaction.fetchReply();
       await replyMessage.react(LOADING_EMOJI);
 
-      const target = interaction.options.getUser('target');
+      const target = interaction.options.getUser('target', true);
       const member = interaction.options.getMember('target');
-      const reason = interaction.options.getString('reason');
+      const reason = interaction.options.getString('reason', true);
       const moderator = interaction.user;
 
-      if (!target || !member) {
+      if (!member) {
         throw new TitanBotError(
           'Invalid target',
           ErrorTypes.USER_INPUT,
-          'That user is not in this server.'
+          'That user is not in this server.',
         );
       }
 
       const hierarchyCheck = ModerationService.validateHierarchy(
         interaction.member,
         member,
-        'warn'
+        'warn',
       );
 
       if (!hierarchyCheck.valid) {
         throw new TitanBotError(
           hierarchyCheck.error,
           ErrorTypes.PERMISSION,
-          hierarchyCheck.error
+          hierarchyCheck.error,
         );
       }
 
@@ -87,9 +87,6 @@ export default {
         throw new Error('Failed to store warning');
       }
 
-      const totalWarns = result.totalCount;
-      const caseId = result.id;
-
       await logModerationAction({
         client,
         guild: interaction.guild,
@@ -99,27 +96,18 @@ export default {
           executor: `${moderator.tag} (${moderator.id})`,
           reason,
           metadata: {
-            warningId: caseId,
-            warningNumber: totalWarns,
+            warningId: result.id,
+            warningNumber: result.totalCount,
           },
         },
       });
-
-      try {
-        const loadingReaction = replyMessage.reactions.cache.find(
-          r => r.emoji.toString() === LOADING_EMOJI
-        );
-        if (loadingReaction) {
-          await loadingReaction.users.remove(client.user.id);
-        }
-      } catch {}
 
       const successEmbed = new EmbedBuilder()
         .setColor(0x57F287)
         .setDescription(
           `${CHECK_EMOJI} <@${target.id}> warned\n` +
-          `**Reason:** ${reason}\n` +
-          `**Duration:** Permanent`
+            `**Reason:** ${reason}\n` +
+            `**Duration:** Permanent`,
         )
         .setTimestamp();
 
@@ -133,7 +121,7 @@ export default {
       try {
         if (replyMessage) {
           const loadingReaction = replyMessage.reactions.cache.find(
-            r => r.emoji.toString() === LOADING_EMOJI
+            reaction => reaction.emoji.toString() === LOADING_EMOJI,
           );
           if (loadingReaction) {
             await loadingReaction.users.remove(client.user.id);
