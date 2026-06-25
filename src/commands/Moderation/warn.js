@@ -103,11 +103,11 @@ export default {
       });
 
       const successEmbed = new EmbedBuilder()
-        .setColor(0x57F287)
+        .setColor(0x77DD77)
         .setDescription(
-          `${CHECK_EMOJI} <@${target.id}> warned\n` +
-            `**Reason:** ${reason}\n` +
-            `**Duration:** Permanent`,
+          `${CHECK_EMOJI} **@${target.username}** warned\n` +
+            `> **Reason:** ${reason}\n` +
+            `> **Duration:** Permanent`,
         )
         .setTimestamp();
 
