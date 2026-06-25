@@ -103,7 +103,7 @@ export default {
       });
 
       const successEmbed = new EmbedBuilder()
-        .setColor(0x77DD77)
+        .setColor(0x59CB45)
         .setDescription(
           `${CHECK_EMOJI} **@${target.username}** warned\n` +
             `> **Reason:** ${reason}\n` +
